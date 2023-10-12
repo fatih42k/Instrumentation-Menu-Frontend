@@ -1,0 +1,9 @@
+// Configure keyboard keys (ASCII)
+#define UP 119        // w
+#define DOWN 115      // s
+#define LEFT 97       // a
+#define RIGHT 100     // d
+#define ENTER 101     // e
+#define BACK 98       // b
+#define BACKSPACE 102 // f
+#define CLEAR 99      // c
