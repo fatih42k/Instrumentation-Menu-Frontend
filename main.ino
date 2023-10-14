@@ -1,8 +1,11 @@
 #include <ItemSubMenu.h>
 #include <LcdMenu.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 #define LCD_ROWS 2
 #define LCD_COLS 16
+#define ONE_WIRE_BUS 8
 
 // Configure keyboard keys (ASCII)
 #define UP 119        // w
@@ -17,6 +20,21 @@
 extern MenuItem* mainMenu[];
 extern MenuItem* PHSubMenu[];
 extern MenuItem* TDSSubMenu[];
+
+// Construct OneWire and DallasTemperature instances
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+
+// Variable to store current temperature
+float currentTemperature = 0.0;
+char temperatureCharArray[6]; // Construct a char array with a length of 6 (5 characters + null-terminator)
+
+// Function to read and update temperature
+void updateTemperature() {
+    sensors.requestTemperatures();
+    currentTemperature = sensors.getTempCByIndex(0);
+    dtostrf(currentTemperature, 5, 2, temperatureCharArray);
+}
 
 // Define subsubmenus
 SUB_MENU(PHSettings, PHSubMenu,
@@ -41,7 +59,7 @@ SUB_MENU(TDSSubMenu, mainMenu,
 );
 
 SUB_MENU(TEMPSubMenu, mainMenu,
-    ITEM_BASIC("TEMP: 20.0C")
+    ITEM_BASIC(temperatureCharArray)
 );
 
 // Define the main menu
@@ -59,6 +77,10 @@ void setup() {
 }
 
 void loop() {
+    updateTemperature();
+    Serial.println(temperatureCharArray);
+    menu.update();
+
     if (!Serial.available()) return;
     char command = Serial.read();
 
