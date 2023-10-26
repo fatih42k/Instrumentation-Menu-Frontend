@@ -1,3 +1,4 @@
+#include <math.h>
 #include <ItemSubMenu.h>
 #include <LcdMenu.h>
 #include <OneWire.h>
@@ -24,16 +25,18 @@ extern MenuItem* TDSSubMenu[];
 // Construct OneWire and DallasTemperature instances
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
-
 // Variable to store current temperature
-float currentTemperature = 0.0;
-char temperatureCharArray[6]; // Construct a char array with a length of 6 (5 characters + null-terminator)
-
+float currentTemperature = -127.00;
+char currentTemperatureChar[8]; // Construct a char array with a length of 8 (7 characters + null-terminator)
+char temperatureCharArray[15] = "TEMP: -127.00C";
 // Function to read and update temperature
 void updateTemperature() {
     sensors.requestTemperatures();
     currentTemperature = sensors.getTempCByIndex(0);
-    dtostrf(currentTemperature, 5, 2, temperatureCharArray);
+    dtostrf(currentTemperature, 7, 2, currentTemperatureChar);
+    for (int i=0; i<7; i++){
+      temperatureCharArray[i+6] = currentTemperatureChar[i];
+    }
 }
 
 // Define subsubmenus
@@ -58,8 +61,12 @@ SUB_MENU(TDSSubMenu, mainMenu,
     ITEM_SUBMENU("TDS: 200PPM", TDSSettings)
 );
 
+// Define the temperature menu item
+MenuItem* temperature = new MenuItem("TEMP: -127.00C");
+
+// Define the TEMPSubMenu
 SUB_MENU(TEMPSubMenu, mainMenu,
-    ITEM_BASIC(temperatureCharArray)
+    temperature
 );
 
 // Define the main menu
@@ -77,13 +84,19 @@ void setup() {
 }
 
 void loop() {
-    updateTemperature();
-    Serial.println(temperatureCharArray);
-    menu.update();
+    uint8_t cursor = menu.getCursorPosition();
+    MenuItem* item = menu.getItemAt(cursor);
 
+    if (item == temperature) {
+        updateTemperature();
+        item->setText(temperatureCharArray);
+        menu.update();
+        delay(1000);
+    }
+    
     if (!Serial.available()) return;
     char command = Serial.read();
-
+    
     if (command == UP)
         menu.up();
     else if (command == DOWN)
